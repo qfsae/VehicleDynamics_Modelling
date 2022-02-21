@@ -645,7 +645,7 @@ function [v,tps,bps] = vehicleModelLat(veh,tr,p)
         % downforce coefficient
         D = -1/2*veh.rho*veh.Cl*veh.A ;
         % lateral tyre coefficients
-        muy = veh.mu ;
+        muy = factor_grip*veh.mu ;
         % longitudinal tyre coefficients
         mux = factor_grip*veh.mu ;
         % For calculation of v in initial code, refer to OpenLAP.m, lines
