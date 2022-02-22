@@ -38,9 +38,9 @@ function mu = calculateSteadyMu(v, vWeight, steerMax, bodySlipMax, stepSize)
             if jMax == 0
                 i = i - 1;
                 counter = counter + 1;
-                difference = max(min(abs(steerAngle(floor(j/2)) - steerLimMax),abs(steerAngle(floor(j/2)) - steerLimMin)), counter * stepSize);
-                steerLimMin = max(steerAngle(floor(j/2)) - difference, 0);
-                steerLimMax = min(steerAngle(floor(j/2)) + difference, steerMax);
+                difference = max(steerMax/2, counter * stepSize);
+                steerLimMin = max(steerMax/2 - difference, 0);
+                steerLimMax = min(steerMax/2 + difference, steerMax);
             else
                 counter = 2;                
                 difference = max(min(abs(steerAngle(jMax) - steerLimMax),abs(steerAngle(jMax) - steerLimMin)), 2 * stepSize);
