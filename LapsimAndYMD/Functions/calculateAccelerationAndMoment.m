@@ -21,9 +21,9 @@ function [ayCalc, mz, mu] = calculateAccelerationAndMoment(ay, vx, SA, BS)
     global rIA
     
     wz = ay ./ vx;
-    vy = vx .* BS';
+    vy = vx .* sin(BS);
     
-    v2 = vx .^2 + vy .^2;
+    v2 = vx .^2;
     
     staticFront = M * 9.81 * cgx / 2 - 0.25 * rho * Cl * A .* v2 * CoP; %Static weight including aero contributions
     staticRear = M * 9.81 * (1 - cgx) / 2 - 0.25 * rho * Cl * A .* v2 * (1 - CoP); %Static weight including aero contributions
