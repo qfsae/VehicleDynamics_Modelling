@@ -15,100 +15,13 @@ diary('off')
 fclose('all') ;
 
 
-%% Declaration of global variables
-%Variables imported from files
-global tireData
-global M
-global cgx
-global cgh
-global L
-global FT
-global RT
-global Cl
-global Cd
-global CoP
-global A
-global rho
-global FRCH
-global RRCH
-global kF
-global kR
-global rG
-global fTP
-global fIA
-global rTP
-global rIA
-
-%variables derived from imported variables
-global a
-global b
-global cgMomentArm
-
-%% Generate car model from excel file and load in tire data
-carInfo = readInfo(filename,'Info') ;
-engineInfo = readTorqueCurve(filename, 'Torque Curve');
-
-name = table2array(carInfo(1,2)) ;
-type = table2array(carInfo(2,2)) ;
-% index
-i = 3 ;
-% mass
-M = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [kg]
-cgx = str2double(table2array(carInfo(i,2)))/100 ; i = i+1 ; % [-]
-cgh = str2double(table2array(carInfo(i,2)))/1000 ; i = i+1 ; % [m]
-% wheelbase and tracks
-L = str2double(table2array(carInfo(i,2)))/1000 ; i = i+1 ; % [m]
-FT = str2double(table2array(carInfo(i,2)))/1000 ; i = i+1 ; % [m]
-RT = str2double(table2array(carInfo(i,2)))/1000 ; i = i+1 ; % [m]
-% steering
-rackRatio = str2double(table2array(carInfo(i,2)))/1000 ; i = i+1 ; % [-]
-% aerodynamics
-Cl = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [-]
-Cd = str2double(table2array(carInfo(i,2))) * -1 ; i = i+1 ; % [-]
-CoP = str2double(table2array(carInfo(i,2)))/100 ; i = i+1 ; % [-]
-A = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [m2]
-rho = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [kg/m3]
-% kinematics and stiffnesses
-FRCH = str2double(table2array(carInfo(i,2)))/1000 ; i = i+1 ; % [m]
-RRCH = str2double(table2array(carInfo(i,2)))/1000 ; i = i+1 ; % [m]
-kF = str2double(table2array(carInfo(i,2))) * 180/pi ; i = i+1 ; % [Nm/rad]
-kR = str2double(table2array(carInfo(i,2))) * 180/pi ; i = i+1 ; % [Nm/rad]
-% tyre information
-rG = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [-]
-fTP = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [psi]
-fIA = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [deg]
-rTP = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [psi]
-rIA = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [deg]
-tyreRadius = str2double(table2array(carInfo(i,2)))/1000 ; i = i+1 ; % [m]
-Cr = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [-]
-vWeight = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [m/s]
-tireFile = (table2array(carInfo(i,2))) ; i = i+1 ; % [-]
-% engine
-relativePower = str2double(table2array(carInfo(i,2))) ; i = i+1 ; % [-]
-nuTherm = str2double(table2array(carInfo(i,2))) ; i = i+1 ; %[-]
-fLHV = str2double(table2array(carInfo(i,2))) ; i = i+1 ; %[J/kg]
-% transmission
-driveType = table2array(carInfo(i,2)) ; i = i+1 ; %[-]
-shiftTime = str2double(table2array(carInfo(i,2))) ; i = i+1 ; %[s]
-nuPG = str2double(table2array(carInfo(i,2))) ; i = i+1 ; %[-]
-nuFG = str2double(table2array(carInfo(i,2))) ; i = i+1 ; %[-]
-nuGB = str2double(table2array(carInfo(i,2))) ; i = i+1 ; %[-]
-PGR = str2double(table2array(carInfo(i,2))) ; i = i+1 ; %[-]
-FGR = str2double(table2array(carInfo(i,2))) ; i = i+1 ; %[-]
-GBGR = str2double(table2array(carInfo(i:end,2))) ;
-nog = length(GBGR) ;
-
-%Derived variables
-a = (1 - cgx) * L;
-b = cgx * L;
-cgMomentArm = cgh - ((RRCH - FRCH)/L * a + FRCH);
-
-tireData = load(tireFile);
+%% Read in car model from excel
+veh = readCarFromExcel(filename);
 
 %% HUD
 
 [folder_status,folder_msg] = mkdir('QueensRacingVEHICLE Vehicles') ;
-vehname = "QueensRacingVEHICLE Vehicles/"+name ;
+vehname = "QueensRacingVEHICLE Vehicles/"+veh.name ;
 delete(vehname+".log") ;
 diary(vehname+".log") ;
 disp([...
@@ -124,112 +37,112 @@ disp('==========================================================================
 disp(filename)
 disp('File read successfully')
 disp('====================================================================================')
-disp("Name: "+name)
-disp("Type: "+type)
+disp("Name: "+veh.name)
+disp("Type: "+veh.type)
 disp("Date: "+datestr(now,'dd/mm/yyyy'))
 disp("Time: "+datestr(now,'HH:MM:SS'))
 disp('====================================================================================')
 disp('Vehicle generation started.')
 
 %% Steering Model
-C = pi/90 * [kF,kF+kR;kF*a,kF*a+kR*b] ; % steering model matrix, converting from rad back to degrees
+veh.C = pi/90 * [veh.kF,veh.kF+veh.kR;veh.kF*veh.a,veh.kF*veh.a+veh.kR*veh.b] ; % steering model matrix, converting from rad back to degrees
 % HUD
 disp('Steering model generated successfully.')
 
 %% Driveline Model
 
 % fetching engine curves
-enSpeedCurve = table2array(engineInfo(:,1)) ; % [rpm]
-enTorqueCurve = table2array(engineInfo(:,2)) ; % [N*m]
-enPowerCurve = enTorqueCurve.*enSpeedCurve*2*pi/60 ; % [W]
+veh.enSpeedCurve = table2array(veh.engineInfo(:,1)) ; % [rpm]
+veh.enTorqueCurve = table2array(veh.engineInfo(:,2)) ; % [N*m]
+veh.enPowerCurve = veh.enTorqueCurve.*veh.enSpeedCurve*2*pi/60 ; % [W]
 % memory preallocation
 % wheel speed per gear for every engine speed value
-wheelSpeedGear = zeros(length(enSpeedCurve),nog) ;
+veh.wheelSpeedGear = zeros(length(veh.enSpeedCurve),veh.nog) ;
 % vehicle speed per gear for every engine speed value
-vehicleSpeedGear = zeros(length(enSpeedCurve),nog) ;
+veh.vehicleSpeedGear = zeros(length(veh.enSpeedCurve),veh.nog) ;
 % wheel torque per gear for every engine speed value
-wheelTorqueGear = zeros(length(enTorqueCurve),nog) ;
+veh.wheelTorqueGear = zeros(length(veh.enTorqueCurve),veh.nog) ;
 % calculating values for each gear and engine speed
-for i=1:nog
-    wheelSpeedGear(:,i) = enSpeedCurve/PGR/GBGR(i)/FGR ;
-    vehicleSpeedGear(:,i) = wheelSpeedGear(:,i)*2*pi/60*tyreRadius ;
-    wheelTorqueGear(:,i) = enTorqueCurve*PGR*GBGR(i)*FGR*nuPG*nuGB*nuFG ;
+for i=1:veh.nog
+    veh.wheelSpeedGear(:,i) = veh.enSpeedCurve/veh.PGR/veh.GBGR(i)/veh.FGR ;
+    veh.vehicleSpeedGear(:,i) = veh.wheelSpeedGear(:,i)*2*pi/60*veh.tyreRadius ;
+    veh.wheelTorqueGear(:,i) = veh.enTorqueCurve*veh.PGR*veh.GBGR(i)*veh.FGR*veh.nuPG*veh.nuGB*veh.nuFG ;
 end
 % minimum and maximum vehicle speeds
-v_min = min(vehicleSpeedGear,[],'all') ;
-v_max = max(vehicleSpeedGear,[],'all') ;
+veh.v_min = min(veh.vehicleSpeedGear,[],'all') ;
+veh.v_max = max(veh.vehicleSpeedGear,[],'all') ;
 % new speed vector for fine meshing
-dv = 0.5/3.6 ;
-vehicleSpeed = linspace(v_min,v_max,(v_max-v_min)/dv)' ;
+veh.dv = 0.5/3.6 ;
+veh.vehicleSpeed = linspace(veh.v_min,veh.v_max,(veh.v_max-veh.v_min)/veh.dv)' ;
 % memory preallocation
 % gear
-gear = zeros(length(vehicleSpeed),1) ;
+veh.gear = zeros(length(veh.vehicleSpeed),1) ;
 % engine tractive force
-fxEngine = zeros(length(vehicleSpeed),1) ;
+veh.fxEngine = zeros(length(veh.vehicleSpeed),1) ;
 % engine tractive force per gear
-fx = zeros(length(vehicleSpeed),nog) ;
+veh.fx = zeros(length(veh.vehicleSpeed),veh.nog) ;
 % optimising gear selection and calculating tractive force
-for i=1:length(vehicleSpeed)
+for i=1:length(veh.vehicleSpeed)
     % going through the gears
-    for j=1:nog
-        fx(i,j) = interp1(vehicleSpeedGear(:,j),wheelTorqueGear(:,j)/tyreRadius,vehicleSpeed(i),'linear',0) ;
+    for j=1:veh.nog
+        veh.fx(i,j) = interp1(veh.vehicleSpeedGear(:,j),veh.wheelTorqueGear(:,j)/veh.tyreRadius,veh.vehicleSpeed(i),'linear',0) ;
     end
     % getting maximum tractive force and gear
-    [fxEngine(i),gear(i)] = max(fx(i,:)) ;
+    [veh.fxEngine(i),veh.gear(i)] = max(veh.fx(i,:)) ;
 end
 % adding values for 0 speed to vectors for interpolation purposes at low speeds
-vehicleSpeed = [0;vehicleSpeed] ;
-gear = [gear(1);gear] ;
-fxEngine = [fxEngine(1);fxEngine] ;
+veh.vehicleSpeed = [0;veh.vehicleSpeed] ;
+veh.gear = [veh.gear(1);veh.gear] ;
+veh.fxEngine = [veh.fxEngine(1);veh.fxEngine] ;
 % final vectors
 % engine speed
-engineSpeed = FGR*GBGR(gear)*PGR.*vehicleSpeed/tyreRadius*60/2/pi ;
+veh.engineSpeed = veh.FGR*veh.GBGR(veh.gear)*veh.PGR.*veh.vehicleSpeed/veh.tyreRadius*60/2/pi ;
 % wheel torque
-wheelTorque = fxEngine*tyreRadius ;
+veh.wheelTorque = veh.fxEngine*veh.tyreRadius ;
 % engine torque
-engineTorque = wheelTorque/FGR./GBGR(gear)/PGR/nuPG/nuGB/nuFG ;
+veh.engineTorque = veh.wheelTorque/veh.FGR./veh.GBGR(veh.gear)/veh.PGR/veh.nuPG/veh.nuGB/veh.nuFG ;
 % engine power
-enginePower = engineTorque.*engineSpeed*2*pi/60 ;
+veh.enginePower = veh.engineTorque.*veh.engineSpeed*2*pi/60 ;
 % HUD
 disp('Driveline model generated successfully.')
 
 %% Shifting Points and Rev Drops
 
 % finding gear changes
-gearChange = diff(gear) ; % gear change will appear as 1
+veh.gearChange = diff(veh.gear) ; % gear change will appear as 1
 % getting speed right before and after gear change
-gearChange = logical([gearChange;0]+[0;gearChange]) ;
+veh.gearChange = logical([veh.gearChange;0]+[0;veh.gearChange]) ;
 % getting engine speed at gear change
-engineSpeedGearChange = engineSpeed(gearChange) ;
+veh.engineSpeedGearChange = veh.engineSpeed(veh.gearChange) ;
 % getting shift points
-shiftPoints = engineSpeedGearChange(1:2:length(engineSpeedGearChange)) ;
+veh.shiftPoints = veh.engineSpeedGearChange(1:2:length(veh.engineSpeedGearChange)) ;
 % getting arrive points
-arrivePoints = engineSpeedGearChange(2:2:length(engineSpeedGearChange)) ;
+veh.arrivePoints = veh.engineSpeedGearChange(2:2:length(veh.engineSpeedGearChange)) ;
 % calculating revdrops
-revDrops = shiftPoints-arrivePoints ;
+veh.revDrops = veh.shiftPoints-veh.arrivePoints ;
 % creating shifting table
-rownames = cell(nog-1,1) ;
-for i=1:nog-1
-    rownames(i) = {[num2str(i,'%d'),'-',num2str(i+1,'%d')]} ;
+veh.rownames = cell(veh.nog-1,1) ;
+for i=1:veh.nog-1
+    veh.rownames(i) = {[num2str(i,'%d'),'-',num2str(i+1,'%d')]} ;
 end
-shifting = table(shiftPoints,arrivePoints,revDrops,'RowNames',rownames) ;
+veh.shifting = table(veh.shiftPoints,veh.arrivePoints,veh.revDrops,'RowNames',veh.rownames) ;
 % HUD
 disp('Shift points calculated successfully.')
 
 %% Tire coefficient generation
 
-steerMax = 14; % deg, hardcoded
-bodySlipMax = 14; % deg, hardcoded
-stepSize = 1; % Points, hardcoded
-dv = 2; % Delta speed between each point used to calculate mu
-vMaxMu = ceil(120/3.6); % Maximum desired speed by rules. No need to evaluate mu past it
+veh.steerMax = 20; % deg, hardcoded
+veh.bodySlipMax = 15; % deg, hardcoded
+veh.stepSize = 1; % Points, hardcoded
+veh.dv = 2; % Delta speed between each point used to calculate mu
+veh.vMaxMu = ceil(120/3.6); % Maximum desired speed by rules. No need to evaluate mu past it
 
-vMuCalc = linspace(0, vMaxMu, vMaxMu/dv + 1); % Speed range used to calculate averaged friction coefficient
+veh.vMuCalc = linspace(0, veh.vMaxMu, veh.vMaxMu/veh.dv + 1); % Speed range used to calculate averaged friction coefficient
 
 %HUD
 disp('Starting friction coefficient derivation...')
 startYMD = tic;
-mu = calculateSteadyMu(vMuCalc, vWeight, steerMax, bodySlipMax, stepSize);
+veh.mu = calculateSteadyMu(veh);
 toc(startYMD)
 
 disp('Friction coefficient calculated successfully...')
@@ -237,86 +150,85 @@ disp('Friction coefficient calculated successfully...')
 %% Force model
 
 % gravitational constant
-g = 9.81 ;
+veh.g = 9.81 ;
 % drive and aero factors
-switch driveType
+switch veh.driveType
     case 'RWD'
-        factorDrive = (1-cgx) ; % weight distribution
-        factorAero = (1-CoP) ; % aero distribution
-        drivenWheels = 2 ; % number of driven wheels
+        veh.factorDrive = (1-veh.cgx) ; % weight distribution
+        veh.factorAero = (1-veh.CoP) ; % aero distribution
+        veh.drivenWheels = 2 ; % number of driven wheels
     case 'FWD'
-        factorDrive = cgx ;
-        factorAero = CoP ;
-        drivenWheels = 2 ;
+        veh.factorDrive = veh.cgx ;
+        veh.factorAero = veh.CoP ;
+        veh.drivenWheels = 2 ;
     otherwise % AWD
-        factorDrive = 1 ;
-        factorAero = 1 ;
-        drivenWheels = 4 ;
+        veh.factorDrive = 1 ;
+        veh.factorAero = 1 ;
+        veh.drivenWheels = 4 ;
 end
 % Z axis
-fzMass = -M*g ;
-fzAero = 1/2*rho*Cl*A*vehicleSpeed.^2 ;
-fzTotal = fzMass+fzAero ;
-fzTyre = (factorDrive*fzMass+factorAero*fzAero)/drivenWheels ;
+veh.fzMass = -veh.M*veh.g ;
+veh.fzAero = 1/2*veh.rho*veh.Cl*veh.A*veh.vehicleSpeed.^2 ;
+veh.fzTotal = veh.fzMass+veh.fzAero ;
+veh.fzTyre = (veh.factorDrive*veh.fzMass+veh.factorAero*veh.fzAero)/veh.drivenWheels ;
 % x axis
-fxAero = 1/2*rho*Cd*A*vehicleSpeed.^2 ;
-fxRoll = Cr*abs(fzTotal) ;
-fxTyre = drivenWheels * mu .* abs(fzTyre) ;
+veh.fxAero = 1/2*veh.rho*veh.Cd*veh.A*veh.vehicleSpeed.^2 ;
+veh.fxRoll = veh.Cr*abs(veh.fzTotal) ;
+veh.fxTyre = veh.drivenWheels * veh.mu .* abs(veh.fzTyre) ;
 % HUD
 disp('Forces calculated successfully.')
 
 %% GGV Map
 
 % tyre coefficients
-W = M*g;
+veh.W = veh.M*veh.g;
 % speed map vector
-dv = 2 ;
-v = (0:dv:v_max)' ;
-if v(end)~=v_max
-    v = [v;v_max] ;
+veh.dv = 2 ;
+veh.v = (0:veh.dv:veh.v_max)' ;
+if veh.v(end)~=veh.v_max
+    veh.v = [veh.v;veh.v_max] ;
 end
 % friction ellipse points
-N = 45 ;
+veh.N = 45 ;
 % map preallocation
-GGV = zeros(length(v),2*N-1,3) ;
-for i=1:length(v)
+veh.GGV = zeros(length(veh.v),2*veh.N-1,3) ;
+for i=1:length(veh.v)
     % aero forces
-    AeroDf = 1/2*rho*Cl*A*v(i)^2 ;
-    AeroDr = 1/2*rho*Cd*A*v(i)^2 ;
+    veh.AeroDf = 1/2*veh.rho*veh.Cl*veh.A*veh.v(i)^2 ;
+    veh.AeroDr = 1/2*veh.rho*veh.Cd*veh.A*veh.v(i)^2 ;
     % rolling resistance
-    RollDr = Cr*abs(-AeroDf+W) ;
+    veh.RollDr = veh.Cr*abs(-veh.AeroDf+veh.W) ;
     % normal load on driven wheels
-    Wd = (factorDrive*W+(-AeroDf * factorAero))/drivenWheels ;
+    veh.Wd = (veh.factorDrive*veh.W+(-veh.AeroDf * veh.factorAero))/veh.drivenWheels ;
     % drag acceleration
-    axDrag = (AeroDr+RollDr)/M ;
+    veh.axDrag = (veh.AeroDr+veh.RollDr)/veh.M ;
     % maximum lat acc available from tyres
-    ayMax = 1/M*(mu*(W-AeroDf)) ;
+    veh.ayMax = 1/veh.M*(veh.mu*(veh.W-veh.AeroDf)) ;
     % max long acc available from tyres
-    axTyreMaxAcc = 1/M*mu*Wd*drivenWheels ;
+    veh.axTyreMaxAcc = 1/veh.M*veh.mu*veh.Wd*veh.drivenWheels ;
     % max long acc available from tyres
-    axTyreMaxDec = -1/M*mu*(W-AeroDf) ;
+    veh.axTyreMaxDec = -1/veh.M*veh.mu*(veh.W-veh.AeroDf) ;
     % getting power limit from engine
-    axPowerLimit = 1/M*(interp1(vehicleSpeed,relativePower*fxEngine,v(i))) ;
-    axPowerLimit = axPowerLimit*ones(N,1) ;
+    veh.axPowerLimit = 1/veh.M*(interp1(veh.vehicleSpeed,veh.relativePower*veh.fxEngine,veh.v(i))) ;
+    veh.axPowerLimit = veh.axPowerLimit*ones(veh.N,1) ;
     % lat acc vector
-    ay = ayMax*cosd(linspace(0,180,N))' ;
+    veh.ay = veh.ayMax*cosd(linspace(0,180,veh.N))' ;
     % long acc vector
-    axTyreAcc = axTyreMaxAcc*sqrt(1-(ay/ayMax).^2) ; % friction ellipse
-    axAcc = min(axTyreAcc,axPowerLimit)+axDrag ; % limiting by engine power
-    axDec = axTyreMaxDec*sqrt(1-(ay/ayMax).^2)+axDrag ; % friction ellipse
+    veh.axTyreAcc = veh.axTyreMaxAcc*sqrt(1-(veh.ay/veh.ayMax).^2) ; % friction ellipse
+    veh.axAcc = min(veh.axTyreAcc,veh.axPowerLimit)+veh.axDrag ; % limiting by engine power
+    veh.axDec = veh.axTyreMaxDec*sqrt(1-(veh.ay/veh.ayMax).^2)+veh.axDrag ; % friction ellipse
     % saving GGV map
-    GGV(i,:,1) = [axAcc',axDec(2:end)'] ;
-    GGV(i,:,2) = [ay',flipud(ay(2:end))'] ;
-    GGV(i,:,3) = v(i)*ones(1,2*N-1) ;
+    veh.GGV(i,:,1) = [veh.axAcc',veh.axDec(2:end)'] ;
+    veh.GGV(i,:,2) = [veh.ay',flipud(veh.ay(2:end))'] ;
+    veh.GGV(i,:,3) = veh.v(i)*ones(1,2*veh.N-1) ;
 end
 % HUD
 disp('GGV map generated successfully.')
 
 %% Saving vehicle
 
-% saving and reloading into useful form for lapsim
+% saving vehicle model for later use
 save(vehname+".mat")
-veh = load(vehname+".mat");
 
 %% Plot
 
@@ -328,7 +240,7 @@ W = 900 ;
 Xpos = floor((SS(3)-W)/2) ;
 Ypos = floor((SS(4)-H)/2) ;
 f = figure('Name','Vehicle Model','Position',[Xpos,Ypos,W,H]) ;
-sgtitle(name)
+sgtitle(veh.name)
 
 % rows and columns
 rows = 4 ;
@@ -340,12 +252,12 @@ hold on
 title('Engine Curve')
 xlabel('Engine Speed [rpm]')
 yyaxis left
-plot(enSpeedCurve,relativePower*enTorqueCurve)
+plot(veh.enSpeedCurve,veh.relativePower*veh.enTorqueCurve)
 ylabel('Engine Torque [Nm]')
 grid on
-xlim([enSpeedCurve(1),enSpeedCurve(end)])
+xlim([veh.enSpeedCurve(1),veh.enSpeedCurve(end)])
 yyaxis right
-plot(enSpeedCurve,relativePower*enPowerCurve/745.7)
+plot(veh.enSpeedCurve,veh.relativePower*veh.enPowerCurve/745.7)
 ylabel('Engine Power [Hp]')
 
 % gearing
@@ -354,38 +266,38 @@ hold on
 title('Gearing')
 xlabel('Speed [m/s]')
 yyaxis left
-plot(vehicleSpeed,engineSpeed)
+plot(veh.vehicleSpeed,veh.engineSpeed)
 ylabel('Engine Speed [rpm]')
 grid on
-xlim([vehicleSpeed(1),vehicleSpeed(end)])
+xlim([veh.vehicleSpeed(1),veh.vehicleSpeed(end)])
 yyaxis right
-plot(vehicleSpeed,gear)
+plot(veh.vehicleSpeed,veh.gear)
 ylabel('Gear [-]')
-ylim([gear(1)-1,gear(end)+1])
+ylim([veh.gear(1)-1,veh.gear(end)+1])
 
 % traction model
 subplot(rows,cols,[5,7])
 hold on
 title('Traction Model')
-plot(vehicleSpeed,relativePower*fxEngine,'k','LineWidth',4)
-plot(vehicleSpeed,min([relativePower*fxEngine';fxTyre']),'r','LineWidth',2)
-plot(vehicleSpeed,-fxAero)
-plot(vehicleSpeed,-fxRoll)
-plot(vehicleSpeed,fxTyre)
-for i=1:nog
-    plot(vehicleSpeed(2:end),fx(:,i),'k--')
+plot(veh.vehicleSpeed,veh.relativePower*veh.fxEngine,'k','LineWidth',4)
+plot(veh.vehicleSpeed,min([veh.relativePower*veh.fxEngine';veh.fxTyre']),'r','LineWidth',2)
+plot(veh.vehicleSpeed,-veh.fxAero)
+plot(veh.vehicleSpeed,-veh.fxRoll)
+plot(veh.vehicleSpeed,veh.fxTyre)
+for i=1:veh.nog
+    plot(veh.vehicleSpeed(2:end),veh.fx(:,i),'k--')
 end
 grid on
 xlabel('Speed [m/s]')
 ylabel('Force [N]')
-xlim([vehicleSpeed(1),vehicleSpeed(end)])
+xlim([veh.vehicleSpeed(1),veh.vehicleSpeed(end)])
 legend({'Engine tractive force','Final tractive force','Aero drag','Rolling resistance','Max tyre tractive force','Engine tractive force per gear'},'Location','southoutside')
 
 % ggv map
 subplot(rows,cols,[2,4,6,8])
 hold on
 title('GGV Map')
-surf(GGV(:,:,2),GGV(:,:,1),GGV(:,:,3))
+surf(veh.GGV(:,:,2),veh.GGV(:,:,1),veh.GGV(:,:,3))
 grid on
 xlabel('Lat acc [m/s^2]')
 ylabel('Long acc [m/s^2]')

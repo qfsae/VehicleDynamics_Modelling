@@ -1,51 +1,51 @@
-function mu = calculateSteadyMu(v, vWeight, steerMax, bodySlipMax, stepSize)
+function mu = calculateSteadyMu(veh)
     %Initialization of mu and weights vectors, as well as initial angle vectors
-    muVals = zeros(1,length(v));
-    weights = vWeight./max(abs(v - vWeight), 1);
+    muVals = zeros(1,length(veh.vMuCalc));
+    weights = veh.vWeight./max(abs(veh.vMuCalc - veh.vWeight), 1);
     
-    bodySlipMin = -bodySlipMax;
-    steerMin = -steerMax;
+    bodySlipMin = -veh.bodySlipMax;
+    steerMin = -veh.steerMax;
     
     %Modification of speed vector to find if any speeds are duplicated
-    v = max(5, v);
+    veh.vMuCalc = max(5, veh.vMuCalc);
     
     %Angle vector generation. Body slip vector is not changed during the code execution
-    bsRes = ceil((bodySlipMax - bodySlipMin)/stepSize) + 1;
-    bodySlip = linspace(bodySlipMin, bodySlipMax, bsRes);
-    saRes = ceil(steerMax/stepSize) + 1;
-    steerAngle = linspace(0, steerMax, saRes);
+    bsRes = ceil((veh.bodySlipMax - bodySlipMin)/veh.stepSize) + 1;
+    bodySlip = linspace(bodySlipMin, veh.bodySlipMax, bsRes);
+    saRes = ceil(veh.steerMax/veh.stepSize) + 1;
+    steerAngle = linspace(0, veh.steerMax, saRes);
         
     %Initial mu calculation for speed vector
-    [muVals(1), jMax] = steadyMu(v(1), steerAngle, bodySlip);
+    [muVals(1), jMax] = steadyMu(veh.vMuCalc(1), steerAngle, bodySlip, veh);
     
     %Modification of the steer angle vector based on difference from bounds
-    difference = max(min(abs(steerAngle(jMax) - steerMax),abs(steerAngle(jMax))), 2 * stepSize);
+    difference = max(min(abs(steerAngle(jMax) - veh.steerMax),abs(steerAngle(jMax))), 2 * veh.stepSize);
     steerLimMin = max(steerAngle(jMax) - difference, 0);
-    steerLimMax = min(steerAngle(jMax) + difference, steerMax);
+    steerLimMax = min(steerAngle(jMax) + difference, veh.steerMax);
         
     i = 2;
-    while i <= length(v)
-        if v(i) == v(i - 1)
+    while i <= length(veh.vMuCalc)
+        if veh.vMuCalc(i) == veh.vMuCalc(i - 1)
             muVals(i) = muVals(i - 1);
         else
             %Generation of new angle limits for each speed and rerunning of steady-state mu calculation
-            saRes = ceil((steerLimMax - steerLimMin)/stepSize) + 1;
+            saRes = ceil((steerLimMax - steerLimMin)/veh.stepSize) + 1;
             steerAngle = linspace(steerLimMin, steerLimMax, saRes);
         
-            [muVals(i), jMax] = steadyMu(v(i), steerAngle, bodySlip);
+            [muVals(i), jMax] = steadyMu(veh.vMuCalc(i), steerAngle, bodySlip, veh);
             
             %Check to see if there were no sign changes in any columns, and to rerun the iteration if necessary.
             if jMax == 0
                 i = i - 1;
                 counter = counter + 1;
-                difference = max(steerMax/2, counter * stepSize);
-                steerLimMin = max(steerMax/2 - difference, 0);
-                steerLimMax = min(steerMax/2 + difference, steerMax);
+                difference = max(veh.steerMax/2, counter * veh.stepSize);
+                steerLimMin = max(veh.steerMax/2 - difference, 0);
+                steerLimMax = min(veh.steerMax/2 + difference, veh.steerMax);
             else
                 counter = 2;                
-                difference = max(min(abs(steerAngle(jMax) - steerLimMax),abs(steerAngle(jMax) - steerLimMin)), 2 * stepSize);
+                difference = max(min(abs(steerAngle(jMax) - steerLimMax),abs(steerAngle(jMax) - steerLimMin)), 2 * veh.stepSize);
                 steerLimMin = max(steerAngle(jMax) - difference, 0);
-                steerLimMax = min(steerAngle(jMax) + difference, steerMax);
+                steerLimMax = min(steerAngle(jMax) + difference, veh.steerMax);
             end
         end
         i = i + 1;
@@ -53,11 +53,11 @@ function mu = calculateSteadyMu(v, vWeight, steerMax, bodySlipMax, stepSize)
     %Weighted average of friction coefficients
     mu = sum(muVals.*weights)/sum(weights);
 
-function [muSteady, jMax] = steadyMu(v, steer, bodySlip)
+function [muSteady, jMax] = steadyMu(v, steer, bodySlip, veh)
     muSteady = 0;
     
     %Extraction of yaw moment diagram for the specified steer and body slip vectors
-    [YMD] = extractYMD(v, steer, bodySlip, 0, 0);
+    [YMD] = extractYMD(v, steer, bodySlip, 0, 0, veh);
         
     jMax = 0;
     

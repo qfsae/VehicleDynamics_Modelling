@@ -1,4 +1,4 @@
-function [YMD] = extractYMD(vx, steer, bodySlip, SAresolution, BSresolution)
+function [YMD] = extractYMD(vx, steer, bodySlip, SAresolution, BSresolution, veh)
     %Function that returns the maximum lateral acceleration that results in
     %zero yaw moment. Body slip and steer angle ranges are from -Max to
     %Max, with each having the same resolution 'N', to create a YMD
@@ -28,7 +28,7 @@ function [YMD] = extractYMD(vx, steer, bodySlip, SAresolution, BSresolution)
 
     for i = 1:length(BSDom)
         for j = 1:length(SADom)
-            [ayVals(i,j), mzVals(i,j), muVals(i,j)] = calculateLateralAccelInterp(vx, SADom(j), BSDom(i));
+            [ayVals(i,j), mzVals(i,j), muVals(i,j)] = calculateLateralAccelInterp(vx, SADom(j), BSDom(i), veh);
         end
     end
     

@@ -1,7 +1,7 @@
-function [ay, mz, mu] = calculateLateralAccelInterp(vx, steerAngle, bodySlip)
+function [ay, mz, mu] = calculateLateralAccelInterp(vx, steerAngle, bodySlip, veh)
     aMax = 40;
     aTMP = linspace(-aMax, aMax, 401);
-    aOut = calculateAccelerationAndMoment(aTMP, vx, steerAngle, bodySlip) - aTMP;
+    aOut = calculateAccelerationAndMoment(aTMP, vx, steerAngle, bodySlip, veh) - aTMP;
     
     signChanges = find(sign(aOut(1:end-1)) ~= sign(aOut(2:end)));
     
@@ -10,7 +10,7 @@ function [ay, mz, mu] = calculateLateralAccelInterp(vx, steerAngle, bodySlip)
         %case the domain doesn't cross zero
         [~, idx] = min(abs(aOut));
         ay = aOut(idx) + aTMP(idx);
-        [~, mz, mu] = calculateAccelerationAndMoment(ay, vx, steerAngle, bodySlip);
+        [~, mz, mu] = calculateAccelerationAndMoment(ay, vx, steerAngle, bodySlip, veh);
     else
         [~, idx] = max(abs(aTMP(signChanges)));
     
@@ -18,6 +18,6 @@ function [ay, mz, mu] = calculateLateralAccelInterp(vx, steerAngle, bodySlip)
         [xZero, ay] = fzero(f, aTMP(signChanges(idx)));
     
         ay = xZero + ay;
-        [~, mz, mu] = calculateAccelerationAndMoment(ay, vx, steerAngle, bodySlip);
+        [~, mz, mu] = calculateAccelerationAndMoment(ay, vx, steerAngle, bodySlip, veh);
     end
 end
