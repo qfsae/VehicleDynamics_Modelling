@@ -125,7 +125,7 @@ veh.rownames = cell(veh.nog-1,1) ;
 for i=1:veh.nog-1
     veh.rownames(i) = {[num2str(i,'%d'),'-',num2str(i+1,'%d')]} ;
 end
-veh.shifting = table(veh.shiftPoints,veh.arrivePoints,veh.revDrops,'RowNames',veh.rownames) ;
+veh.shifting = table(veh.shiftPoints,veh.arrivePoints,veh.revDrops) ;
 % HUD
 disp('Shift points calculated successfully.')
 
