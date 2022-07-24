@@ -1,4 +1,4 @@
-function [sim] = QueensRacingLAP(veh, tr)
+    function [sim] = QueensRacingLAP(veh, tr)
 %% Queens Racing LapSim Code
 %
 % Initially written by Maurice Nayman
